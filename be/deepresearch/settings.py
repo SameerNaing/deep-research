@@ -9,11 +9,16 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
+from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -37,6 +42,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'djoser',
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
+    'core.apps.CoreConfig',
+    'research.apps.ResearchConfig'
 ]
 
 MIDDLEWARE = [
@@ -73,9 +84,13 @@ WSGI_APPLICATION = 'deepresearch.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",  # or 'mysql', 'sqlite3', etc.
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
     }
 }
 
@@ -120,3 +135,60 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'core.User'
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    'DEFAULT_VERSION': '1.0',
+    'ALLOWED_VERSIONS': ['1.0'],
+    'VERSION_PARAM': 'version',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+   'AUTH_HEADER_TYPES': ('Bearer',),
+   "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+}
+
+DJOSER = {
+    'TOKEN_MODEL': None,
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Deep Research Assistant",
+    "DESCRIPTION": "Research assistant APIs",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,  
+    "SWAGGER_UI_DIST": "SIDECAR",  
+    "REDOC_DIST": "SIDECAR",  
+    "SECURITY": [{"BearerAuth": []}],
+    "COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,      
+        "initOAuth": {},                   
+        "displayRequestDuration": True,   
+        "authAction": {
+            "BearerAuth": {
+                "token": {
+                    "prefix": "Bearer"     
+                }
+            }
+        },
+        "persistAuthorization": True,
+        "persistAuthorizationStorage": "localStorage",
+        "displayRequestDuration": True,
+    },
+
+}
